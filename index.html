@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulator Control Panel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: #1a1a1a;
+            border-radius: 8px;
+            box-shadow: 0 0 40px rgba(0, 255, 0, 0.1);
+            border: 1px solid #2a2a2a;
+            padding: 40px;
+            max-width: 1000px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #00ff00;
+            margin-bottom: 5px;
+            text-align: center;
+            font-size: 2em;
+            font-weight: 700;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+            letter-spacing: 1px;
+        }
+
+        .status-bar {
+            background: #0d0d0d;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+            text-align: center;
+            border: 1px solid #2a2a2a;
+        }
+
+        .status-bar p {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .control-card {
+            background: #0d0d0d;
+            border-radius: 6px;
+            padding: 20px;
+            border: 1px solid #333;
+            transition: all 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .control-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff00, transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .control-card:hover {
+            border-color: #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+        }
+
+        .control-card:hover::before {
+            opacity: 1;
+        }
+
+        .control-card h3 {
+            color: #fff;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .control-card p {
+            color: #888;
+            font-size: 0.8em;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            display: inline-block;
+            padding: 5px 12px;
+            border-radius: 3px;
+            font-size: 0.7em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            letter-spacing: 1px;
+            border: 1px solid;
+        }
+
+        .status-running {
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.3);
+        }
+
+        .status-stopped {
+            background: rgba(128, 128, 128, 0.1);
+            color: #888;
+            border-color: #444;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 12px 20px;
+            border: 1px solid;
+            border-radius: 4px;
+            font-size: 0.85em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-family: 'Consolas', 'Monaco', monospace;
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        .btn-start {
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            border-color: #00ff00;
+        }
+
+        .btn-start:hover:not(:disabled) {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+        }
+
+        .btn-stop {
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff0000;
+            border-color: #ff0000;
+        }
+
+        .btn-stop:hover:not(:disabled) {
+            background: #ff0000;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.5);
+        }
+
+        .btn-stop-all {
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff0000;
+            border: 1px solid #ff0000;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn-stop-all:hover:not(:disabled) {
+            background: #ff0000;
+            color: #fff;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+        }
+
+        .btn-refresh {
+            background: rgba(255, 255, 255, 0.05);
+            color: #fff;
+            border: 1px solid #444;
+            width: 100%;
+        }
+
+        .btn-refresh:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #00ff00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.3);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 4px;
+            font-weight: 500;
+            opacity: 0;
+            transform: translateY(-20px);
+            transition: all 0.3s;
+            z-index: 1000;
+            border: 1px solid;
+            font-size: 0.9em;
+            letter-spacing: 0.5px;
+        }
+
+        .notification.show {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .notification.success {
+            background: rgba(0, 255, 0, 0.1);
+            color: #00ff00;
+            border-color: #00ff00;
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+        }
+
+        .notification.error {
+            background: rgba(255, 0, 0, 0.1);
+            color: #ff0000;
+            border-color: #ff0000;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.3);
+        }
+
+        .api-config {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .api-config input {
+            padding: 10px 15px;
+            border: 1px solid #333;
+            border-radius: 4px;
+            font-size: 0.9em;
+            width: 350px;
+            max-width: 100%;
+            background: #0d0d0d;
+            color: #00ff00;
+            font-family: 'Consolas', 'Monaco', monospace;
+            transition: all 0.3s;
+        }
+
+        .api-config input:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.2);
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SIMULATOR CONTROL PANEL</h1>
+        <p class="subtitle">TACTICAL MISSION CONTROL SYSTEM</p>
+
+        <div class="api-config">
+            <input type="text" id="apiUrl" value="http://localhost:8000" placeholder="API Base URL">
+        </div>
+
+        <div class="status-bar">
+            <button class="btn-refresh" onclick="refreshStatus()">🔄 Refresh Status</button>
+        </div>
+
+        <div class="controls-grid" id="controlsGrid">
+            <!-- Cards will be populated by JavaScript -->
+        </div>
+
+        <button class="btn-stop-all" onclick="stopAll()">⛔ Stop All Tasks</button>
+    </div>
+
+    <div class="notification" id="notification"></div>
+
+    <script>
+        const API_URL = () => document.getElementById('apiUrl').value;
+        
+        const simulators = [
+            {
+                id: 'random_radar',
+                name: 'Random Radar',
+                description: 'Generate random radar points',
+                startEndpoint: '/radar/start',
+                stopEndpoint: '/radar/stop'
+            },
+            {
+                id: 'random_radar_decoy',
+                name: 'Radar Decoy',
+                description: 'Generate radar decoy points',
+                startEndpoint: '/radar/decoy/start',
+                stopEndpoint: '/radar/decoy/stop'
+            },
+            {
+                id: 'main_simulation',
+                name: 'Main Simulation',
+                description: 'Run simulated flights',
+                startEndpoint: '/simulation/start',
+                stopEndpoint: '/simulation/stop'
+            },
+            {
+                id: 'drone_attack',
+                name: 'Drone Attack',
+                description: 'Trigger drone attack simulation',
+                startEndpoint: '/attack/drone/start',
+                stopEndpoint: '/attack/drone/stop'
+            },
+            {
+                id: 'rocket_attack',
+                name: 'Rocket Attack',
+                description: 'Trigger rocket attack simulation',
+                startEndpoint: '/attack/rocket/start',
+                stopEndpoint: '/attack/rocket/stop'
+            }
+        ];
+
+        let statusData = {};
+
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+
+        async function makeRequest(endpoint, method = 'POST') {
+            try {
+                const response = await fetch(`${API_URL()}${endpoint}`, { method });
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.detail || 'Request failed');
+                }
+                
+                return { success: true, data };
+            } catch (error) {
+                return { success: false, error: error.message };
+            }
+        }
+
+        async function startSimulator(id) {
+            const sim = simulators.find(s => s.id === id);
+            const result = await makeRequest(sim.startEndpoint);
+            
+            if (result.success) {
+                showNotification(`${sim.name} started successfully`, 'success');
+                await refreshStatus();
+            } else {
+                showNotification(`Failed to start ${sim.name}: ${result.error}`, 'error');
+            }
+        }
+
+        async function stopSimulator(id) {
+            const sim = simulators.find(s => s.id === id);
+            const result = await makeRequest(sim.stopEndpoint);
+            
+            if (result.success) {
+                showNotification(`${sim.name} stopped successfully`, 'success');
+                await refreshStatus();
+            } else {
+                showNotification(`Failed to stop ${sim.name}: ${result.error}`, 'error');
+            }
+        }
+
+        async function stopAll() {
+            const result = await makeRequest('/simulation/stop-all');
+            
+            if (result.success) {
+                showNotification('All tasks stopped successfully', 'success');
+                await refreshStatus();
+            } else {
+                showNotification(`Failed to stop all tasks: ${result.error}`, 'error');
+            }
+        }
+
+        async function refreshStatus() {
+            const result = await makeRequest('/simulation/status', 'GET');
+            
+            if (result.success) {
+                statusData = result.data;
+                renderCards();
+            } else {
+                showNotification('Failed to fetch status', 'error');
+            }
+        }
+
+        function renderCards() {
+            const grid = document.getElementById('controlsGrid');
+            grid.innerHTML = '';
+            
+            simulators.forEach(sim => {
+                const isRunning = statusData[sim.id] === 'running';
+                
+                const card = document.createElement('div');
+                card.className = 'control-card';
+                card.innerHTML = `
+                    <h3>${sim.name}</h3>
+                    <p>${sim.description}</p>
+                    <span class="status-indicator ${isRunning ? 'status-running' : 'status-stopped'}">
+                        ${isRunning ? '● RUNNING' : '○ STOPPED'}
+                    </span>
+                    <div class="button-group">
+                        <button class="btn-start" onclick="startSimulator('${sim.id}')" ${isRunning ? 'disabled' : ''}>
+                            ▶ Start
+                        </button>
+                        <button class="btn-stop" onclick="stopSimulator('${sim.id}')" ${!isRunning ? 'disabled' : ''}>
+                            ■ Stop
+                        </button>
+                    </div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        // Initial load
+        refreshStatus();
+        
+        // Auto-refresh every 3 seconds
+        setInterval(refreshStatus, 3000);
+    </script>
+</body>
+</html>
+
