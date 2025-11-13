@@ -315,6 +315,13 @@
         const API_URL = () => document.getElementById('apiUrl').value;
         
         const simulators = [
+        {
+    id: 'realtime_feed',
+    name: 'Realtime Flight Feed',
+    description: 'Stream real-time flight data every 10 seconds',
+    startEndpoint: '/realtime/opensky/start',
+    stopEndpoint: '/realtime/opensky/stop'
+},
             {
                 id: 'random_radar',
                 name: 'Random Radar',
